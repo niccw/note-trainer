@@ -131,6 +131,7 @@ canvas#waveform{display:block;width:100%;border-radius:8px;background:rgba(83,74
     <div class="waveform-wrap" id="waveform-wrap">
       <canvas id="waveform" height="40"></canvas>
     </div>
+
     <div id="debug-panel" style="display:none;margin-top:1rem;background:#1a1a2e;border-radius:8px;padding:.8rem;max-height:160px;overflow-y:auto">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
         <span style="font-size:11px;font-weight:600;color:#7F77DD;letter-spacing:.5px;text-transform:uppercase">Audio debug</span>
@@ -175,7 +176,7 @@ var KEYS=[
 var T_SHARP_STEPS=[9,6,10,7,4,8,5], T_FLAT_STEPS=[6,9,5,8,4,7,3];
 var B_SHARP_STEPS=[6,3,7,4,1,5,2], B_FLAT_STEPS=[2,5,1,4,0,3,6];
 var WHITE_NAMES_TREBLE=['C3','D3','E3','F3','G3','A3','B3','C4','D4','E4','F4','G4','A4','B4','C5'];
-var WHITE_NAMES_BASS=['E2','F2','G2','A2','B2','C3','D3','E3','F3','G3','A3','B3','C4'];
+var WHITE_NAMES_BASS=['C2','D2','E2','F2','G2','A2','B2','C3','D3','E3','F3','G3','A3','B3','C4'];
 var BLACK_AFTER={0:'C#',1:'D#',3:'F#',4:'G#',5:'A#'};
 
 var mode='virtual', clef='treble', diff=0;
@@ -257,7 +258,9 @@ function buildPiano(){
   var whites=clef==='bass'?WHITE_NAMES_BASS:WHITE_NAMES_TREBLE;
   whites.forEach(function(fn,i){
     var name=fn.replace(/\d/g,'');
-    var k=document.createElement('div'); k.className='key white'; k.dataset.note=name;
+    var k=document.createElement('div'); k.className='key white';
+    k.dataset.note=name;
+    k.dataset.fullname=fn; // store full name with octave for highlight matching
     var lbl=document.createElement('span'); lbl.className='label'; lbl.textContent=name;
     k.appendChild(lbl);
     k.addEventListener('click', function(){ handleAnswer(name); });
@@ -277,7 +280,7 @@ function nextNote(){
   currentNote=notePool[Math.floor(Math.random()*notePool.length)];
   renderStaff(); renderPips(); setFeedback('',''); clearKeyHighlights();
   var hint=document.getElementById('note-hint');
-  hint.textContent='Answer: '+currentNote.name+currentNote.oct;
+  hint.textContent='Answer: '+currentNote.name+currentNote.oct+' (step '+currentNote.staffStep+')';
   hint.style.display='none';
 }
 
@@ -292,6 +295,7 @@ function handleAnswer(noteName){
   var ok=noteName.toUpperCase()===correct.toUpperCase();
   var isNatural=noteName.indexOf('#')===-1;
   var pool=[].slice.call(document.querySelectorAll(isNatural?'.key.white':'.key.black'));
+  // find the key that was actually clicked — match by note name only for click target
   var hit=pool.find(function(k){ return k.dataset.note===noteName; });
   if(ok){
     answered=true; score++; streak++; if(streak>best) best=streak;
@@ -309,9 +313,12 @@ function handleAnswer(noteName){
 
 function revealAnswer(){
   var correct=currentNote.name;
+  var correctOct=currentNote.oct;
   var isNat=correct.indexOf('#')===-1;
   var pool=[].slice.call(document.querySelectorAll(isNat?'.key.white':'.key.black'));
-  var hit=pool.find(function(k){ return k.dataset.note===correct; });
+  var targetFullName=correct+correctOct;
+  var hit=pool.find(function(k){ return k.dataset.fullname===targetFullName; })
+          ||pool.find(function(k){ return k.dataset.note===correct; });
   if(hit) hit.classList.add('revealed');
   setFeedback('The answer is '+correct+' — click it to continue','reveal');
   if(hit) hit.addEventListener('click', function handler(){
@@ -348,8 +355,11 @@ function updateHUD(){
   document.getElementById('best-val').textContent=best;
 }
 
-function noteYpx(staffStep,staffTop,lg){
-  return staffTop+5*lg-staffStep*(lg/2);
+function noteYpx(staffStep, staffTop, lg){
+  // bottom line = staffStep 2, drawn at staffTop + 4*lg
+  // each diatonic step up = lg/2 pixels up
+  var bottomLineY = staffTop + 4*lg;
+  return bottomLineY - (staffStep - 2) * (lg/2);
 }
 
 function renderStaff(){
@@ -360,10 +370,11 @@ function renderStaff(){
   var ctx=canvas.getContext('2d'); ctx.scale(2,2);
   ctx.clearRect(0,0,W,H);
   var lg=16, staffTop=50;
+  var bottomLineY=staffTop+4*lg; // Y of bottom staff line = G2/E4
   var ink='#1a1a2e';
 
   ctx.fillStyle='rgba(83,74,183,0.05)';
-  ctx.beginPath(); ctx.roundRect(30,staffTop-14,W-50,4*lg+28,8); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(30,staffTop-16,W-50,4*lg+32,8); ctx.fill();
 
   ctx.strokeStyle='rgba(83,74,183,0.25)'; ctx.lineWidth=1;
   for(var i=0;i<5;i++){
@@ -375,9 +386,9 @@ function renderStaff(){
   if(clef==='treble'){
     ctx.font='bold 62px serif'; ctx.fillText('𝄞',24,staffTop+4*lg+12);
   } else {
-    ctx.font='bold 44px serif'; ctx.fillText('𝄢',28,staffTop+2*lg+4);
-    ctx.beginPath(); ctx.arc(56,staffTop+lg-2,3,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(56,staffTop+2*lg-2,3,0,Math.PI*2); ctx.fill();
+    ctx.font='bold 44px serif'; ctx.fillText('𝄢',28,staffTop+2*lg+2);
+    ctx.beginPath(); ctx.arc(58,staffTop+lg-3,3.5,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(58,staffTop+2*lg-3,3.5,0,Math.PI*2); ctx.fill();
   }
 
   var acc=selectedKey.acc, isSharp=selectedKey.accType==='sharp';
@@ -417,7 +428,9 @@ function renderStaff(){
   ctx.beginPath(); ctx.ellipse(nx,ny,10,7,-0.15,0,Math.PI*2);
   ctx.fillStyle='#534AB7'; ctx.fill();
 
-  var stemUp=step<6;
+  // For bass clef: middle line = D3 = staffStep 6, stem up if below middle (step < 6)
+  // For treble clef: middle line = B4 = staffStep 6, same rule
+  var stemUp = step < 6;
   ctx.beginPath();
   if(stemUp){ ctx.moveTo(nx+9,ny); ctx.lineTo(nx+9,ny-52); }
   else { ctx.moveTo(nx-9,ny); ctx.lineTo(nx-9,ny+52); }
@@ -533,6 +546,16 @@ function startMic(){
     },1000);
 
     var params=getSensitivityParams();
+    var diagTimer=setInterval(function(){
+      analyser.getFloatTimeDomainData(buf);
+      var rms=0;
+      for(var i=0;i<buf.length;i++) rms+=buf[i]*buf[i];
+      rms=Math.sqrt(rms/buf.length);
+      var f=yinPitch(buf,audioCtx.sampleRate);
+      debugLog('RMS:'+rms.toFixed(5)+' freq:'+(f>0?f.toFixed(1)+'Hz':'—')+' note:'+(f>0?freqToNote(f):'—'));
+    },500);
+    micStream._diagTimer=diagTimer;
+
     pitchTimer=setInterval(function(){
       analyser.getFloatTimeDomainData(buf);
       var f=yinPitch(buf,audioCtx.sampleRate);
@@ -552,6 +575,7 @@ function startMic(){
 function stopMic(){
   if(animFrame){ cancelAnimationFrame(animFrame); animFrame=null; }
   if(pitchTimer){ clearInterval(pitchTimer); pitchTimer=null; }
+
   if(micStream&&micStream._diagTimer){ clearInterval(micStream._diagTimer); }
   if(micSource){ micSource.disconnect(); micSource=null; }
   if(micGain){ micGain.disconnect(); micGain=null; }
