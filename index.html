@@ -99,6 +99,16 @@ canvas#waveform{display:block;width:100%;border-radius:8px;background:rgba(83,74
     </div>
     <span class="section-label">Difficulty</span>
     <div class="diff-row" id="diff-row"></div>
+    <div id="mic-settings" style="display:none;margin-bottom:1.4rem">
+      <span class="section-label">Mic sensitivity</span>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:.4rem">
+        <span style="font-size:12px;color:#888">Low</span>
+        <input type="range" id="sensitivity-slider" min="1" max="5" value="3" step="1" style="flex:1">
+        <span style="font-size:12px;color:#888">High</span>
+        <span id="sensitivity-label" style="font-size:12px;font-weight:600;color:#534AB7;min-width:28px;text-align:right">3</span>
+      </div>
+      <p style="font-size:11px;color:#aaa;margin-top:.4rem">Higher = picks up quieter notes but may trigger on noise</p>
+    </div>
     <button class="start-btn" onclick="startGame()">Start practice</button>
   </div>
 
@@ -196,11 +206,18 @@ function buildDiffButtons(){
 
 document.getElementById('clef-select').addEventListener('change', buildDiffButtons);
 
+// Show/hide mic settings when real piano mode is chosen
 function chooseMode(m){
   mode=m;
   document.getElementById('card-virtual').classList.toggle('selected', m==='virtual');
   document.getElementById('card-mic').classList.toggle('selected', m==='mic');
+  document.getElementById('mic-settings').style.display=m==='mic'?'block':'none';
 }
+
+// Sensitivity slider label
+document.getElementById('sensitivity-slider').addEventListener('input', function(){
+  document.getElementById('sensitivity-label').textContent=this.value;
+});
 
 function startGame(){
   clef=document.getElementById('clef-select').value;
@@ -508,12 +525,13 @@ function startMic(){
       console.log('AudioContext state:',audioCtx.state,' RMS:',rms.toFixed(6),' analyser fftSize:',analyser.fftSize);
     },1000);
 
+    var params=getSensitivityParams();
     pitchTimer=setInterval(function(){
       analyser.getFloatTimeDomainData(buf);
-      var f=autoCorrelate(buf,audioCtx.sampleRate);
+      var f=yinPitch(buf,audioCtx.sampleRate);
       if(f>40&&f<1400){
         var n=freqToNote(f);
-        if(n===lastDetected){ detCount++; if(detCount===3) handleAnswer(n); }
+        if(n===lastDetected){ detCount++; if(detCount===params.confirm) handleAnswer(n); }
         else { lastDetected=n; detCount=0; }
       }
     },80);
