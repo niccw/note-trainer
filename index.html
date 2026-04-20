@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:sans-serif;background:transparent}
+#app{padding:1.5rem 1rem;max-width:680px;margin:0 auto}
+.screen{display:none}.screen.active{display:block}
+h1{font-size:24px;font-weight:500;color:#1a1a2e;margin-bottom:.3rem}
+.tagline{font-size:12px;color:#888;margin-bottom:1.8rem;letter-spacing:.3px;text-transform:uppercase}
+.section-label{font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:#888;margin-bottom:.6rem;display:block}
+.mode-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.6rem}
+.mode-card{background:#fff;border:1.5px solid #e0ddf8;border-radius:12px;padding:1.2rem;cursor:pointer;transition:all .2s;text-align:left}
+.mode-card:hover,.mode-card.selected{border-color:#534AB7;background:#f5f3fd}
+.mode-card-icon{font-size:22px;margin-bottom:.6rem}
+.mode-card h2{font-size:14px;font-weight:600;color:#1a1a2e;margin-bottom:.3rem}
+.mode-card p{font-size:12px;color:#888;line-height:1.5}
+.selects-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.6rem}
+.select-group{display:flex;flex-direction:column;gap:.4rem}
+.select-group label{font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:#888}
+select{font-size:13px;padding:8px 12px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#1a1a2e;cursor:pointer;width:100%}
+.diff-row{display:flex;gap:6px;margin-bottom:1.8rem;flex-wrap:wrap}
+.diff-btn{background:#fff;border:1px solid #ddd;border-radius:20px;padding:6px 14px;cursor:pointer;font-size:12px;color:#888;transition:all .2s}
+.diff-btn:hover{border-color:#7F77DD;color:#534AB7}
+.diff-btn.active{background:#534AB7;border-color:#534AB7;color:#fff}
+.start-btn{width:100%;background:#534AB7;color:#fff;border:none;border-radius:12px;padding:13px 28px;font-size:15px;font-weight:500;cursor:pointer;transition:opacity .15s}
+.start-btn:hover{opacity:.88}
+.hud{display:flex;gap:8px;align-items:center;margin-bottom:1rem;flex-wrap:wrap}
+.stat-card{background:#f5f3fd;border-radius:8px;padding:6px 14px;text-align:center}
+.stat-card .sv{font-size:18px;font-weight:600;color:#1a1a2e;line-height:1}
+.stat-card .sl{font-size:10px;color:#888;letter-spacing:.5px;text-transform:uppercase;margin-top:2px}
+.hud-spacer{flex:1}
+.badge{font-size:11px;font-weight:500;letter-spacing:.4px;border-radius:20px;padding:4px 10px}
+.badge-purple{background:#EEEDFE;color:#3C3489}
+.badge-amber{background:#FAEEDA;color:#633806}
+.badge-teal{background:#E1F5EE;color:#085041}
+.hint-btn{font-size:12px;color:#534AB7;background:none;border:1px solid #7F77DD;border-radius:20px;padding:4px 12px;cursor:pointer;transition:background .15s;white-space:nowrap}
+.hint-btn:hover{background:#EEEDFE}
+canvas#staff{display:block;width:100%;max-width:580px;margin:0 auto .6rem}
+.note-hint{text-align:center;font-size:13px;color:#534AB7;font-weight:500;margin-bottom:.5rem;display:none}
+.error-pips{display:flex;gap:5px;justify-content:center;margin-bottom:.6rem}
+.pip{width:8px;height:8px;border-radius:50%;background:#ddd;transition:background .2s}
+.pip.filled{background:#D85A30}
+.feedback{text-align:center;font-size:14px;font-weight:500;min-height:22px;margin-bottom:.7rem}
+.feedback.correct{color:#0F6E56}.feedback.wrong{color:#993C1D}.feedback.reveal{color:#185FA5}
+.piano-wrap{overflow-x:auto;padding:6px 0 10px}
+.piano{display:flex;justify-content:center;padding:0 4px}
+.key{position:relative;cursor:pointer;transition:background .08s,transform .08s}
+.key.white{width:38px;height:115px;background:#fff;z-index:1;margin:0 1.5px;border-radius:0 0 6px 6px;border:1px solid #ccc;box-shadow:0 2px 4px rgba(0,0,0,.08)}
+.key.black{width:24px;height:70px;background:#1a1a2e;z-index:2;margin:0 -12px;border-radius:0 0 4px 4px;border:1px solid #000}
+.key.white:hover{background:#ece9fb;transform:scaleY(1.01)}
+.key.black:hover{background:#534AB7}
+.key.active-correct{background:#5DCAA5!important}
+.key.active-wrong{background:#F0997B!important}
+.key.revealed{background:#85B7EB!important}
+.key .label{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);font-size:10px;color:#aaa;font-weight:500;pointer-events:none}
+.key.black .label{color:#666;bottom:4px}
+.bottom-row{display:flex;align-items:center;justify-content:space-between;margin-top:.8rem}
+.mic-status{font-size:11px;color:#888;display:flex;align-items:center;gap:5px}
+.mic-dot{width:6px;height:6px;border-radius:50%;background:#ccc;flex-shrink:0}
+.mic-status.active .mic-dot{background:#1D9E75}
+.back-btn{font-size:12px;color:#888;background:none;border:none;cursor:pointer;padding:4px 0}
+.back-btn:hover{color:#1a1a2e}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="screen-start" class="screen active">
+    <h1>Note Trainer</h1>
+    <p class="tagline">Learn to read sheet music</p>
+    <span class="section-label">Practice mode</span>
+    <div class="mode-cards">
+      <div class="mode-card selected" id="card-virtual" onclick="chooseMode('virtual')">
+        <div class="mode-card-icon">🎹</div>
+        <h2>Virtual keyboard</h2>
+        <p>Click the on-screen keys or press A–G</p>
+      </div>
+      <div class="mode-card" id="card-mic" onclick="chooseMode('mic')">
+        <div class="mode-card-icon">🎙</div>
+        <h2>Real piano</h2>
+        <p>Play your instrument — mic detects the note</p>
+      </div>
+    </div>
+    <div class="selects-row">
+      <div class="select-group">
+        <label>Clef</label>
+        <select id="clef-select">
+          <option value="treble">Treble clef</option>
+          <option value="bass">Bass clef</option>
+        </select>
+      </div>
+      <div class="select-group">
+        <label>Key</label>
+        <select id="key-select"></select>
+      </div>
+    </div>
+    <span class="section-label">Difficulty</span>
+    <div class="diff-row" id="diff-row"></div>
+    <button class="start-btn" onclick="startGame()">Start practice</button>
+  </div>
+
+  <div id="screen-game" class="screen">
+    <div class="hud">
+      <div class="stat-card"><div class="sv" id="score-val">0</div><div class="sl">Score</div></div>
+      <div class="stat-card"><div class="sv" id="streak-val">0</div><div class="sl">Streak</div></div>
+      <div class="stat-card"><div class="sv" id="best-val">0</div><div class="sl">Best</div></div>
+      <div class="hud-spacer"></div>
+      <span class="badge badge-purple" id="mode-badge">Virtual</span>
+      <span class="badge badge-amber" id="clef-badge">Treble</span>
+      <span class="badge badge-teal" id="key-badge">C major</span>
+      <button class="hint-btn" onclick="toggleHint()">show answer</button>
+    </div>
+    <canvas id="staff" height="190"></canvas>
+    <div class="note-hint" id="note-hint"></div>
+    <div class="error-pips" id="error-pips"></div>
+    <div class="feedback" id="feedback"></div>
+    <div class="piano-wrap"><div class="piano" id="piano"></div></div>
+    <div class="bottom-row">
+      <div class="mic-status" id="mic-status"><div class="mic-dot"></div><span id="mic-text"></span></div>
+      <button class="back-btn" onclick="goBack()">← back to menu</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TREBLE_NOTES=[
+  {name:'C',oct:4,staffStep:0},{name:'D',oct:4,staffStep:1},
+  {name:'E',oct:4,staffStep:2},{name:'F',oct:4,staffStep:3},
+  {name:'G',oct:4,staffStep:4},{name:'A',oct:4,staffStep:5},
+  {name:'B',oct:4,staffStep:6},{name:'C',oct:5,staffStep:7},
+  {name:'D',oct:5,staffStep:8},{name:'E',oct:5,staffStep:9},
+];
+const BASS_NOTES=[
+  {name:'G',oct:2,staffStep:2},{name:'A',oct:2,staffStep:3},
+  {name:'B',oct:2,staffStep:4},{name:'C',oct:3,staffStep:5},
+  {name:'D',oct:3,staffStep:6},{name:'E',oct:3,staffStep:7},
+  {name:'F',oct:3,staffStep:8},{name:'G',oct:3,staffStep:9},
+  {name:'A',oct:3,staffStep:10},{name:'B',oct:3,staffStep:11},
+];
+const TREBLE_DIFFS=[{label:'Beginner',n:3},{label:'Easy',n:5},{label:'Medium',n:7},{label:'Full',n:10}];
+const BASS_DIFFS=[{label:'Beginner',n:3},{label:'Easy',n:6},{label:'Medium',n:8},{label:'Full',n:10}];
+const KEYS=[
+  {label:'C major',acc:[],accType:'sharp'},{label:'G major',acc:['F'],accType:'sharp'},
+  {label:'D major',acc:['F','C'],accType:'sharp'},{label:'A major',acc:['F','C','G'],accType:'sharp'},
+  {label:'E major',acc:['F','C','G','D'],accType:'sharp'},{label:'B major',acc:['F','C','G','D','A'],accType:'sharp'},
+  {label:'F major',acc:['B'],accType:'flat'},{label:'Bb major',acc:['B','E'],accType:'flat'},
+  {label:'Eb major',acc:['B','E','A'],accType:'flat'},{label:'Ab major',acc:['B','E','A','D'],accType:'flat'},
+  {label:'A minor',acc:[],accType:'sharp'},{label:'E minor',acc:['F'],accType:'sharp'},
+  {label:'B minor',acc:['F','C'],accType:'sharp'},{label:'D minor',acc:['B'],accType:'flat'},
+  {label:'G minor',acc:['B','E'],accType:'flat'},{label:'C minor',acc:['B','E','A'],accType:'flat'},
+];
+const T_SHARP_STEPS=[9,6,10,7,4,8,5],T_FLAT_STEPS=[6,9,5,8,4,7,3];
+const B_SHARP_STEPS=[8,5,9,6,3,7,4],B_FLAT_STEPS=[4,7,3,6,2,5,1];
+const WHITE_NAMES_TREBLE=['C3','D3','E3','F3','G3','A3','B3','C4','D4','E4','F4','G4','A4','B4','C5'];
+const WHITE_NAMES_BASS=['E2','F2','G2','A2','B2','C3','D3','E3','F3','G3','A3','B3','C4'];
+const BLACK_AFTER={0:'C#',1:'D#',3:'F#',4:'G#',5:'A#'};
+
+let mode='virtual',clef='treble',diff=0,score=0,streak=0,best=0,errors=0;
+let currentNote=null,notePool=[],answered=false,selectedKey=KEYS[0];
+let audioCtx=null,analyser=null,micStream=null,pitchTimer=null;
+const MAX_ERRORS=5;
+
+function buildKeySelect(){
+  const sel=document.getElementById('key-select');
+  sel.innerHTML='';
+  KEYS.forEach((k,i)=>{
+    const o=document.createElement('option');o.value=i;o.textContent=k.label;sel.appendChild(o);
+  });
+}
+
+function buildDiffButtons(){
+  const cv=document.getElementById('clef-select').value;
+  const diffs=cv==='bass'?BASS_DIFFS:TREBLE_DIFFS;
+  const row=document.getElementById('diff-row');
+  row.innerHTML='';
+  diffs.forEach((d,i)=>{
+    const b=document.createElement('button');
+    b.className='diff-btn'+(i===0?' active':'');
+    b.textContent=d.label;
+    b.onclick=()=>{
+      document.querySelectorAll('.diff-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');diff=i;
+    };
+    row.appendChild(b);
+  });
+  diff=0;
+}
+
+document.getElementById('clef-select').addEventListener('change',buildDiffButtons);
+
+function chooseMode(m){
+  mode=m;
+  document.getElementById('card-virtual').classList.toggle('selected',m==='virtual');
+  document.getElementById('card-mic').classList.toggle('selected',m==='mic');
+}
+
+function startGame(){
+  clef=document.getElementById('clef-select').value;
+  const ki=parseInt(document.getElementById('key-select').value)||0;
+  selectedKey=KEYS[ki];
+  const diffs=clef==='bass'?BASS_DIFFS:TREBLE_DIFFS;
+  const pool=clef==='bass'?BASS_NOTES:TREBLE_NOTES;
+  notePool=pool.slice(0,diffs[diff].n);
+  score=0;streak=0;best=0;errors=0;answered=false;
+  document.getElementById('screen-start').classList.remove('active');
+  document.getElementById('screen-game').classList.add('active');
+  document.getElementById('mode-badge').textContent=mode==='mic'?'Real piano':'Virtual';
+  document.getElementById('clef-badge').textContent=clef==='bass'?'Bass clef':'Treble clef';
+  document.getElementById('key-badge').textContent=selectedKey.label;
+  buildPiano();updateHUD();nextNote();
+  if(mode==='mic') startMic();
+}
+
+function goBack(){
+  stopMic();
+  document.getElementById('screen-game').classList.remove('active');
+  document.getElementById('screen-start').classList.add('active');
+  document.getElementById('mic-text').textContent='';
+  document.getElementById('mic-status').classList.remove('active');
+}
+
+function buildPiano(){
+  const piano=document.getElementById('piano');piano.innerHTML='';
+  const whites=clef==='bass'?WHITE_NAMES_BASS:WHITE_NAMES_TREBLE;
+  whites.forEach((fn,i)=>{
+    const name=fn.replace(/\d/g,'');
+    const k=document.createElement('div');k.className='key white';k.dataset.note=name;
+    const lbl=document.createElement('span');lbl.className='label';lbl.textContent=name;
+    k.appendChild(lbl);k.addEventListener('click',()=>handleAnswer(name));piano.appendChild(k);
+    const mod=i%7;
+    if(mod in BLACK_AFTER&&i<whites.length-1){
+      const bk=document.createElement('div');bk.className='key black';
+      const bn=BLACK_AFTER[mod][0];bk.dataset.note=bn;
+      bk.addEventListener('click',()=>handleAnswer(bn));piano.appendChild(bk);
+    }
+  });
+}
+
+function nextNote(){
+  errors=0;answered=false;
+  currentNote=notePool[Math.floor(Math.random()*notePool.length)];
+  renderStaff();renderPips();setFeedback('','');clearKeyHighlights();
+  const hint=document.getElementById('note-hint');
+  hint.textContent='Answer: '+currentNote.name+currentNote.oct;
+  hint.style.display='none';
+}
+
+function toggleHint(){
+  const el=document.getElementById('note-hint');
+  el.style.display=el.style.display==='block'?'none':'block';
+}
+
+function handleAnswer(noteName){
+  if(answered)return;
+  const correct=currentNote.name;
+  const ok=noteName.toUpperCase()===correct.toUpperCase();
+  const isNatural=!noteName.includes('#');
+  const pool=[...document.querySelectorAll(isNatural?'.key.white':'.key.black')];
+  const hit=pool.find(k=>k.dataset.note===noteName);
+  if(ok){
+    answered=true;score++;streak++;if(streak>best)best=streak;
+    updateHUD();
+    if(hit){hit.classList.add('active-correct');setTimeout(()=>hit.classList.remove('active-correct'),500);}
+    setFeedback('Correct!','correct');setTimeout(nextNote,850);
+  } else {
+    errors++;streak=0;updateHUD();renderPips();
+    if(hit){hit.classList.add('active-wrong');setTimeout(()=>hit.classList.remove('active-wrong'),350);}
+    if(errors>=MAX_ERRORS)revealAnswer();
+    else setFeedback(`Try again — ${MAX_ERRORS-errors} attempt${MAX_ERRORS-errors===1?'':'s'} left`,'wrong');
+  }
+}
+
+function revealAnswer(){
+  const correct=currentNote.name;
+  const isNat=!correct.includes('#');
+  const pool=[...document.querySelectorAll(isNat?'.key.white':'.key.black')];
+  const hit=pool.find(k=>k.dataset.note===correct);
+  if(hit)hit.classList.add('revealed');
+  setFeedback(`The answer is ${correct} — click it to continue`,'reveal');
+  if(hit)hit.addEventListener('click',()=>{
+    if(answered)return;answered=true;
+    hit.classList.remove('revealed');setTimeout(nextNote,400);
+  },{once:true});
+}
+
+function clearKeyHighlights(){
+  document.querySelectorAll('.key').forEach(k=>k.classList.remove('active-correct','active-wrong','revealed'));
+}
+function renderPips(){
+  const el=document.getElementById('error-pips');el.innerHTML='';
+  for(let i=0;i<MAX_ERRORS;i++){
+    const p=document.createElement('div');p.className='pip'+(i<errors?' filled':'');el.appendChild(p);
+  }
+}
+function setFeedback(msg,cls){
+  const el=document.getElementById('feedback');el.textContent=msg;el.className='feedback'+(cls?' '+cls:'');
+}
+function updateHUD(){
+  document.getElementById('score-val').textContent=score;
+  document.getElementById('streak-val').textContent=streak;
+  document.getElementById('best-val').textContent=best;
+}
+
+function noteYpx(staffStep,staffTop,lg){return staffTop+5*lg-staffStep*(lg/2);}
+
+function renderStaff(){
+  const canvas=document.getElementById('staff');
+  const W=canvas.offsetWidth||560,H=190;
+  canvas.width=W*2;canvas.height=H*2;
+  canvas.style.width=W+'px';canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');ctx.scale(2,2);
+  ctx.clearRect(0,0,W,H);
+  const lg=16,staffTop=50;
+  const ink='#1a1a2e';
+
+  ctx.fillStyle='rgba(83,74,183,0.05)';
+  ctx.beginPath();ctx.roundRect(30,staffTop-14,W-50,4*lg+28,8);ctx.fill();
+
+  ctx.strokeStyle='rgba(83,74,183,0.25)';ctx.lineWidth=1;
+  for(let i=0;i<5;i++){
+    const y=staffTop+i*lg;
+    ctx.beginPath();ctx.moveTo(40,y);ctx.lineTo(W-24,y);ctx.stroke();
+  }
+
+  ctx.fillStyle=ink;
+  if(clef==='treble'){
+    ctx.font='bold 62px serif';ctx.fillText('𝄞',24,staffTop+4*lg+12);
+  } else {
+    ctx.font='bold 44px serif';ctx.fillText('𝄢',28,staffTop+2*lg+4);
+    ctx.beginPath();ctx.arc(56,staffTop+lg-2,3,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(56,staffTop+2*lg-2,3,0,Math.PI*2);ctx.fill();
+  }
+
+  const acc=selectedKey.acc,isSharp=selectedKey.accType==='sharp';
+  const accSteps=clef==='treble'?(isSharp?T_SHARP_STEPS:T_FLAT_STEPS):(isSharp?B_SHARP_STEPS:B_FLAT_STEPS);
+  const sym=isSharp?'♯':'♭';
+  let sigX=clef==='treble'?80:74;
+  ctx.fillStyle=ink;
+  acc.forEach((_,idx)=>{
+    let step=accSteps[idx];
+    if(step>11)step-=7;if(step<0)step+=7;
+    const y=noteYpx(step,staffTop,lg);
+    ctx.font=isSharp?'bold 15px serif':'bold 19px serif';
+    ctx.fillText(sym,sigX,y+5);sigX+=14;
+  });
+
+  const step=currentNote.staffStep;
+  const ny=noteYpx(step,staffTop,lg);
+  const nx=acc.length>0?Math.max(sigX+26,W/2+10):W/2+20;
+
+  ctx.lineWidth=1.5;ctx.strokeStyle=ink;
+  if(clef==='treble'){
+    if(step<=0){ctx.beginPath();ctx.moveTo(nx-14,noteYpx(0,staffTop,lg));ctx.lineTo(nx+14,noteYpx(0,staffTop,lg));ctx.stroke();}
+    for(let s=10;s<=step;s+=2){ctx.beginPath();ctx.moveTo(nx-14,noteYpx(s,staffTop,lg));ctx.lineTo(nx+14,noteYpx(s,staffTop,lg));ctx.stroke();}
+  } else {
+    if(step<=1){ctx.beginPath();ctx.moveTo(nx-14,noteYpx(0,staffTop,lg));ctx.lineTo(nx+14,noteYpx(0,staffTop,lg));ctx.stroke();}
+    for(let s=10;s<=step;s+=2){ctx.beginPath();ctx.moveTo(nx-14,noteYpx(s,staffTop,lg));ctx.lineTo(nx+14,noteYpx(s,staffTop,lg));ctx.stroke();}
+  }
+  ctx.lineWidth=1;
+
+  if(acc.includes(currentNote.name)){
+    ctx.font=isSharp?'bold 13px serif':'bold 17px serif';
+    ctx.fillStyle=ink;ctx.fillText(sym,nx-22,ny+5);
+  }
+
+  ctx.beginPath();ctx.ellipse(nx,ny,11,7.5,-0.15,0,Math.PI*2);
+  ctx.fillStyle='rgba(83,74,183,0.15)';ctx.fill();
+  ctx.beginPath();ctx.ellipse(nx,ny,10,7,-0.15,0,Math.PI*2);
+  ctx.fillStyle='#534AB7';ctx.fill();
+
+  const stemUp=step<6;
+  ctx.beginPath();
+  if(stemUp){ctx.moveTo(nx+9,ny);ctx.lineTo(nx+9,ny-52);}
+  else{ctx.moveTo(nx-9,ny);ctx.lineTo(nx-9,ny+52);}
+  ctx.strokeStyle='#534AB7';ctx.lineWidth=1.8;ctx.stroke();
+}
+
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('screen-game').classList.contains('active')){
+    const k=e.key.toUpperCase();
+    if('ABCDEFG'.includes(k)&&k.length===1)handleAnswer(k);
+  }
+});
+
+const NOTE_FREQS={C:261.63,D:293.66,E:329.63,F:349.23,G:392.00,A:440.00,B:493.88};
+function freqToNote(f){
+  let best=null,bestDist=Infinity;
+  for(const [n,fr] of Object.entries(NOTE_FREQS))
+    for(let o=-2;o<=2;o++){const d=Math.abs(f-fr*Math.pow(2,o));if(d<bestDist){bestDist=d;best=n;}}
+  return best;
+}
+function autoCorrelate(buf,sr){
+  let rms=0;for(let i=0;i<buf.length;i++)rms+=buf[i]*buf[i];rms=Math.sqrt(rms/buf.length);
+  if(rms<0.01)return -1;
+  let r1=0,r2=buf.length-1;const thres=0.2;
+  for(let i=0;i<buf.length/2;i++){if(Math.abs(buf[i])<thres){r1=i;break;}}
+  for(let i=buf.length-1;i>buf.length/2;i--){if(Math.abs(buf[i])<thres){r2=i;break;}}
+  const sub=buf.slice(r1,r2);const cc=new Float32Array(sub.length*2);
+  for(let i=0;i<sub.length;i++)for(let j=0;j<sub.length;j++)cc[i+j]+=sub[j]*sub[i];
+  let d=0;while(cc[d]>cc[d+1])d++;
+  let maxVal=-1,maxPos=-1;
+  for(let i=d;i<cc.length/2;i++){if(cc[i]>maxVal){maxVal=cc[i];maxPos=i;}}
+  if(maxPos<1)return -1;
+  const x1=cc[maxPos-1],x2=cc[maxPos],x3=cc[maxPos+1];
+  return sr/(maxPos+(x3-x1)/(2*(2*x2-x1-x3)));
+}
+let lastDetected=null,detCount=0;
+function startMic(){
+  navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+    micStream=stream;
+    audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    analyser=audioCtx.createAnalyser();analyser.fftSize=2048;
+    audioCtx.createMediaStreamSource(stream).connect(analyser);
+    const ms=document.getElementById('mic-status');
+    ms.className='mic-status active';
+    document.getElementById('mic-text').textContent='Mic active — play a note';
+    const buf=new Float32Array(analyser.fftSize);
+    pitchTimer=setInterval(()=>{
+      analyser.getFloatTimeDomainData(buf);
+      const f=autoCorrelate(buf,audioCtx.sampleRate);
+      if(f>40&&f<1400){
+        const n=freqToNote(f);
+        if(n===lastDetected){detCount++;if(detCount===3)handleAnswer(n);}
+        else{lastDetected=n;detCount=0;}
+      }
+    },80);
+  }).catch(()=>{
+    document.getElementById('mic-text').textContent='Mic denied — use click or keyboard';
+  });
+}
+function stopMic(){
+  if(pitchTimer)clearInterval(pitchTimer);
+  if(micStream)micStream.getTracks().forEach(t=>t.stop());
+  if(audioCtx)audioCtx.close();
+  pitchTimer=null;micStream=null;audioCtx=null;
+}
+window.addEventListener('resize',()=>{
+  if(currentNote&&document.getElementById('screen-game').classList.contains('active'))renderStaff();
+});
+
+// Init — runs after full parse
+buildKeySelect();
+buildDiffButtons();
+</script>
+</body>
+</html>
