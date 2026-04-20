@@ -451,10 +451,14 @@ function startMic(){
   }
   navigator.mediaDevices.getUserMedia({audio:true,video:false}).then(function(stream){
     micStream=stream;
-    audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-    if(audioCtx.state==='suspended') audioCtx.resume();
+    audioCtx=new(window.AudioContext||window.webkitAudioContext)({sampleRate:44100});
     analyser=audioCtx.createAnalyser(); analyser.fftSize=4096;
-    audioCtx.createMediaStreamSource(stream).connect(analyser);
+    analyser.smoothingTimeConstant=0;
+    var src=audioCtx.createMediaStreamSource(stream);
+    src.connect(analyser);
+    audioCtx.resume().then(function(){
+      document.getElementById('mic-text').textContent='Mic active — play a note';
+    });
 
     document.getElementById('mic-status').className='mic-status active';
     document.getElementById('mic-text').textContent='Mic active — play a note';
@@ -467,12 +471,14 @@ function startMic(){
 
     var buf=new Float32Array(analyser.fftSize);
 
+    var W=wCanvas.offsetWidth||560, H=40;
+    wCanvas.width=W*2; wCanvas.height=H*2;
+    wCanvas.style.width=W+'px'; wCanvas.style.height=H+'px';
+
     function drawWave(){
       animFrame=requestAnimationFrame(drawWave);
-      var W=wCanvas.offsetWidth||560, H=40;
-      wCanvas.width=W*2; wCanvas.height=H*2;
-      wCanvas.style.width=W+'px'; wCanvas.style.height=H+'px';
-      wCtx.scale(2,2);
+      wCtx.save();
+      wCtx.setTransform(2,0,0,2,0,0);
       wCtx.clearRect(0,0,W,H);
       analyser.getFloatTimeDomainData(buf);
       wCtx.beginPath();
@@ -485,6 +491,7 @@ function startMic(){
         x+=sliceW;
       }
       wCtx.stroke();
+      wCtx.restore();
     }
     drawWave();
 
