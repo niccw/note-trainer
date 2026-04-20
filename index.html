@@ -503,6 +503,8 @@ function startMic(){
 
     document.getElementById('mic-status').className='mic-status active';
     document.getElementById('mic-text').textContent='Mic active — play a note';
+    document.getElementById('debug-panel').style.display='block';
+    document.getElementById('debug-log').innerHTML='<div>Mic connected, waiting for sound...</div>';
 
     // Show waveform
     var wrap=document.getElementById('waveform-wrap');
