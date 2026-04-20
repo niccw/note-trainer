@@ -164,7 +164,7 @@ var BLACK_AFTER={0:'C#',1:'D#',3:'F#',4:'G#',5:'A#'};
 var mode='virtual', clef='treble', diff=0;
 var score=0, streak=0, best=0, errors=0;
 var currentNote=null, notePool=[], answered=false, selectedKey=KEYS[0];
-var audioCtx=null, analyser=null, micStream=null, pitchTimer=null, animFrame=null;
+var audioCtx=null, analyser=null, micStream=null, micSource=null, micGain=null, pitchTimer=null, animFrame=null;
 var MAX_ERRORS=5;
 
 function buildKeySelect(){
@@ -452,10 +452,14 @@ function startMic(){
   navigator.mediaDevices.getUserMedia({audio:true,video:false}).then(function(stream){
     micStream=stream;
     audioCtx=new(window.AudioContext||window.webkitAudioContext)({sampleRate:44100});
-    analyser=audioCtx.createAnalyser(); analyser.fftSize=4096;
+    analyser=audioCtx.createAnalyser();
+    analyser.fftSize=4096;
     analyser.smoothingTimeConstant=0;
-    var src=audioCtx.createMediaStreamSource(stream);
-    src.connect(analyser);
+    micGain=audioCtx.createGain();
+    micGain.gain.value=1.0;
+    micSource=audioCtx.createMediaStreamSource(stream);
+    micSource.connect(micGain);
+    micGain.connect(analyser);
     audioCtx.resume().then(function(){
       document.getElementById('mic-text').textContent='Mic active — play a note';
     });
@@ -524,6 +528,8 @@ function stopMic(){
   if(animFrame){ cancelAnimationFrame(animFrame); animFrame=null; }
   if(pitchTimer){ clearInterval(pitchTimer); pitchTimer=null; }
   if(micStream&&micStream._diagTimer){ clearInterval(micStream._diagTimer); }
+  if(micSource){ micSource.disconnect(); micSource=null; }
+  if(micGain){ micGain.disconnect(); micGain=null; }
   if(micStream){ micStream.getTracks().forEach(function(t){ t.stop(); }); micStream=null; }
   if(audioCtx){ audioCtx.close(); audioCtx=null; }
 }
