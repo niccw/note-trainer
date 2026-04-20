@@ -131,6 +131,13 @@ canvas#waveform{display:block;width:100%;border-radius:8px;background:rgba(83,74
     <div class="waveform-wrap" id="waveform-wrap">
       <canvas id="waveform" height="40"></canvas>
     </div>
+    <div id="debug-panel" style="display:none;margin-top:1rem;background:#1a1a2e;border-radius:8px;padding:.8rem;max-height:160px;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
+        <span style="font-size:11px;font-weight:600;color:#7F77DD;letter-spacing:.5px;text-transform:uppercase">Audio debug</span>
+        <button onclick="document.getElementById('debug-log').innerHTML=''" style="font-size:10px;color:#888;background:none;border:none;cursor:pointer">clear</button>
+      </div>
+      <div id="debug-log" style="font-size:11px;color:#9FE1CB;font-family:monospace;line-height:1.6"></div>
+    </div>
     <div class="bottom-row">
       <div class="mic-status" id="mic-status"><div class="mic-dot"></div><span id="mic-text"></span></div>
       <button class="back-btn" onclick="goBack()">← back to menu</button>
@@ -166,7 +173,7 @@ var KEYS=[
   {label:'G minor',acc:['B','E'],accType:'flat'},{label:'C minor',acc:['B','E','A'],accType:'flat'}
 ];
 var T_SHARP_STEPS=[9,6,10,7,4,8,5], T_FLAT_STEPS=[6,9,5,8,4,7,3];
-var B_SHARP_STEPS=[8,5,9,6,3,7,4], B_FLAT_STEPS=[4,7,3,6,2,5,1];
+var B_SHARP_STEPS=[6,3,7,4,1,5,2], B_FLAT_STEPS=[2,5,1,4,0,3,6];
 var WHITE_NAMES_TREBLE=['C3','D3','E3','F3','G3','A3','B3','C4','D4','E4','F4','G4','A4','B4','C5'];
 var WHITE_NAMES_BASS=['E2','F2','G2','A2','B2','C3','D3','E3','F3','G3','A3','B3','C4'];
 var BLACK_AFTER={0:'C#',1:'D#',3:'F#',4:'G#',5:'A#'};
