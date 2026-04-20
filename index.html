@@ -495,6 +495,15 @@ function startMic(){
     }
     drawWave();
 
+    // Diagnostic: log raw RMS every second so we can see if audio is coming in
+    var diagTimer=setInterval(function(){
+      analyser.getFloatTimeDomainData(buf);
+      var rms=0;
+      for(var i=0;i<buf.length;i++) rms+=buf[i]*buf[i];
+      rms=Math.sqrt(rms/buf.length);
+      console.log('AudioContext state:',audioCtx.state,' RMS:',rms.toFixed(6),' analyser fftSize:',analyser.fftSize);
+    },1000);
+
     pitchTimer=setInterval(function(){
       analyser.getFloatTimeDomainData(buf);
       var f=autoCorrelate(buf,audioCtx.sampleRate);
@@ -504,6 +513,7 @@ function startMic(){
         else { lastDetected=n; detCount=0; }
       }
     },80);
+    micStream._diagTimer=diagTimer;
 
   }).catch(function(){
     document.getElementById('mic-text').textContent='Mic access denied — use click or keyboard';
@@ -513,6 +523,7 @@ function startMic(){
 function stopMic(){
   if(animFrame){ cancelAnimationFrame(animFrame); animFrame=null; }
   if(pitchTimer){ clearInterval(pitchTimer); pitchTimer=null; }
+  if(micStream&&micStream._diagTimer){ clearInterval(micStream._diagTimer); }
   if(micStream){ micStream.getTracks().forEach(function(t){ t.stop(); }); micStream=null; }
   if(audioCtx){ audioCtx.close(); audioCtx=null; }
 }
