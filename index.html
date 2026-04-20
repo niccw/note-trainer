@@ -20,10 +20,16 @@ h1{font-size:24px;font-weight:500;color:#1a1a2e;margin-bottom:.3rem}
 .select-group{display:flex;flex-direction:column;gap:.4rem}
 .select-group label{font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:#888}
 select{font-size:13px;padding:8px 12px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#1a1a2e;cursor:pointer;width:100%}
-.diff-row{display:flex;gap:6px;margin-bottom:1.8rem;flex-wrap:wrap}
+.diff-row{display:flex;gap:6px;margin-bottom:1.4rem;flex-wrap:wrap}
 .diff-btn{background:#fff;border:1px solid #ddd;border-radius:20px;padding:6px 14px;cursor:pointer;font-size:12px;color:#888;transition:all .2s}
 .diff-btn:hover{border-color:#7F77DD;color:#534AB7}
 .diff-btn.active{background:#534AB7;border-color:#534AB7;color:#fff}
+.mic-settings{display:none;margin-bottom:1.4rem}
+.sens-row{display:flex;align-items:center;gap:12px;margin-top:.4rem}
+.sens-row span{font-size:12px;color:#888}
+.sens-row input{flex:1}
+.sens-val{font-size:12px;font-weight:600;color:#534AB7;min-width:20px;text-align:right}
+.sens-hint{font-size:11px;color:#aaa;margin-top:.3rem}
 .start-btn{width:100%;background:#534AB7;color:#fff;border:none;border-radius:12px;padding:13px 28px;font-size:15px;font-weight:500;cursor:pointer;transition:opacity .15s}
 .start-btn:hover{opacity:.88}
 .hud{display:flex;gap:8px;align-items:center;margin-bottom:1rem;flex-wrap:wrap}
@@ -35,7 +41,7 @@ select{font-size:13px;padding:8px 12px;border-radius:8px;border:1px solid #ddd;b
 .badge-purple{background:#EEEDFE;color:#3C3489}
 .badge-amber{background:#FAEEDA;color:#633806}
 .badge-teal{background:#E1F5EE;color:#085041}
-.hint-btn{font-size:12px;color:#534AB7;background:none;border:1px solid #7F77DD;border-radius:20px;padding:4px 12px;cursor:pointer;transition:background .15s;white-space:nowrap}
+.hint-btn{font-size:12px;color:#534AB7;background:none;border:1px solid #7F77DD;border-radius:20px;padding:4px 12px;cursor:pointer;white-space:nowrap}
 .hint-btn:hover{background:#EEEDFE}
 canvas#staff{display:block;width:100%;max-width:580px;margin:0 auto .6rem}
 .note-hint{text-align:center;font-size:13px;color:#534AB7;font-weight:500;margin-bottom:.5rem;display:none}
@@ -58,6 +64,11 @@ canvas#staff{display:block;width:100%;max-width:580px;margin:0 auto .6rem}
 .key.black .label{color:#666;bottom:4px}
 .waveform-wrap{width:100%;max-width:580px;margin:.5rem auto 0;display:none}
 canvas#waveform{display:block;width:100%;border-radius:8px;background:rgba(83,74,183,0.06)}
+.debug-panel{display:none;margin-top:.8rem;background:#1a1a2e;border-radius:8px;padding:.8rem;max-height:140px;overflow-y:auto}
+.debug-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem}
+.debug-title{font-size:11px;font-weight:600;color:#7F77DD;letter-spacing:.5px;text-transform:uppercase}
+.debug-clear{font-size:10px;color:#888;background:none;border:none;cursor:pointer}
+.debug-log{font-size:11px;color:#9FE1CB;font-family:monospace;line-height:1.6}
 .bottom-row{display:flex;align-items:center;justify-content:space-between;margin-top:.8rem}
 .mic-status{font-size:11px;color:#888;display:flex;align-items:center;gap:5px}
 .mic-dot{width:6px;height:6px;border-radius:50%;background:#ccc;flex-shrink:0}
@@ -68,6 +79,8 @@ canvas#waveform{display:block;width:100%;border-radius:8px;background:rgba(83,74
 </head>
 <body>
 <div id="app">
+
+  <!-- START SCREEN -->
   <div id="screen-start" class="screen active">
     <h1>Note Trainer</h1>
     <p class="tagline">Learn to read sheet music</p>
@@ -99,19 +112,20 @@ canvas#waveform{display:block;width:100%;border-radius:8px;background:rgba(83,74
     </div>
     <span class="section-label">Difficulty</span>
     <div class="diff-row" id="diff-row"></div>
-    <div id="mic-settings" style="display:none;margin-bottom:1.4rem">
+    <div class="mic-settings" id="mic-settings">
       <span class="section-label">Mic sensitivity</span>
-      <div style="display:flex;align-items:center;gap:12px;margin-top:.4rem">
-        <span style="font-size:12px;color:#888">Low</span>
-        <input type="range" id="sensitivity-slider" min="1" max="5" value="3" step="1" style="flex:1">
-        <span style="font-size:12px;color:#888">High</span>
-        <span id="sensitivity-label" style="font-size:12px;font-weight:600;color:#534AB7;min-width:28px;text-align:right">3</span>
+      <div class="sens-row">
+        <span>Low</span>
+        <input type="range" id="sens-slider" min="1" max="5" value="3" step="1">
+        <span>High</span>
+        <span class="sens-val" id="sens-val">3</span>
       </div>
-      <p style="font-size:11px;color:#aaa;margin-top:.4rem">Higher = picks up quieter notes but may trigger on noise</p>
+      <p class="sens-hint">Higher = picks up quieter notes but may trigger on noise</p>
     </div>
     <button class="start-btn" onclick="startGame()">Start practice</button>
   </div>
 
+  <!-- GAME SCREEN -->
   <div id="screen-game" class="screen">
     <div class="hud">
       <div class="stat-card"><div class="sv" id="score-val">0</div><div class="sl">Score</div></div>
@@ -131,21 +145,20 @@ canvas#waveform{display:block;width:100%;border-radius:8px;background:rgba(83,74
     <div class="waveform-wrap" id="waveform-wrap">
       <canvas id="waveform" height="40"></canvas>
     </div>
-
-    <div id="debug-panel" style="display:none;margin-top:1rem;background:#1a1a2e;border-radius:8px;padding:.8rem;max-height:160px;overflow-y:auto">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
-        <span style="font-size:11px;font-weight:600;color:#7F77DD;letter-spacing:.5px;text-transform:uppercase">Audio debug</span>
-        <button onclick="document.getElementById('debug-log').innerHTML=''" style="font-size:10px;color:#888;background:none;border:none;cursor:pointer">clear</button>
+    <div class="debug-panel" id="debug-panel">
+      <div class="debug-header">
+        <span class="debug-title">Audio debug</span>
+        <button class="debug-clear" onclick="document.getElementById('debug-log').innerHTML=''">clear</button>
       </div>
-      <div id="debug-log" style="font-size:11px;color:#9FE1CB;font-family:monospace;line-height:1.6"></div>
+      <div class="debug-log" id="debug-log"></div>
     </div>
     <div class="bottom-row">
       <div class="mic-status" id="mic-status"><div class="mic-dot"></div><span id="mic-text"></span></div>
       <button class="back-btn" onclick="goBack()">← back to menu</button>
     </div>
   </div>
-</div>
 
+</div>
 <script>
 var TREBLE_NOTES=[
   {name:'C',oct:4,staffStep:0},{name:'D',oct:4,staffStep:1},
@@ -182,9 +195,12 @@ var BLACK_AFTER={0:'C#',1:'D#',3:'F#',4:'G#',5:'A#'};
 var mode='virtual', clef='treble', diff=0;
 var score=0, streak=0, best=0, errors=0;
 var currentNote=null, notePool=[], answered=false, selectedKey=KEYS[0];
-var audioCtx=null, analyser=null, micStream=null, micSource=null, micGain=null, pitchTimer=null, animFrame=null;
+var audioCtx=null, analyser=null, micStream=null, micSource=null, micGain=null;
+var pitchTimer=null, diagTimer=null, animFrame=null;
+var lastDetected=null, detCount=0;
 var MAX_ERRORS=5;
 
+// ── UI setup ──────────────────────────────────────────────────────────────────
 function buildKeySelect(){
   var sel=document.getElementById('key-select');
   sel.innerHTML='';
@@ -213,8 +229,10 @@ function buildDiffButtons(){
 }
 
 document.getElementById('clef-select').addEventListener('change', buildDiffButtons);
+document.getElementById('sens-slider').addEventListener('input', function(){
+  document.getElementById('sens-val').textContent=this.value;
+});
 
-// Show/hide mic settings when real piano mode is chosen
 function chooseMode(m){
   mode=m;
   document.getElementById('card-virtual').classList.toggle('selected', m==='virtual');
@@ -222,11 +240,7 @@ function chooseMode(m){
   document.getElementById('mic-settings').style.display=m==='mic'?'block':'none';
 }
 
-// Sensitivity slider label
-document.getElementById('sensitivity-slider').addEventListener('input', function(){
-  document.getElementById('sensitivity-label').textContent=this.value;
-});
-
+// ── Game flow ─────────────────────────────────────────────────────────────────
 function startGame(){
   clef=document.getElementById('clef-select').value;
   var ki=parseInt(document.getElementById('key-select').value)||0;
@@ -249,32 +263,39 @@ function goBack(){
   document.getElementById('screen-game').classList.remove('active');
   document.getElementById('screen-start').classList.add('active');
   document.getElementById('mic-text').textContent='';
-  document.getElementById('mic-status').classList.remove('active');
+  document.getElementById('mic-status').className='mic-status';
   document.getElementById('waveform-wrap').style.display='none';
+  document.getElementById('debug-panel').style.display='none';
+  document.getElementById('debug-log').innerHTML='';
 }
 
+// ── Piano keyboard ────────────────────────────────────────────────────────────
 function buildPiano(){
   var piano=document.getElementById('piano'); piano.innerHTML='';
   var whites=clef==='bass'?WHITE_NAMES_BASS:WHITE_NAMES_TREBLE;
   whites.forEach(function(fn,i){
     var name=fn.replace(/\d/g,'');
-    var k=document.createElement('div'); k.className='key white';
+    var k=document.createElement('div');
+    k.className='key white';
     k.dataset.note=name;
-    k.dataset.fullname=fn; // store full name with octave for highlight matching
+    k.dataset.fullname=fn;
     var lbl=document.createElement('span'); lbl.className='label'; lbl.textContent=name;
     k.appendChild(lbl);
     k.addEventListener('click', function(){ handleAnswer(name); });
     piano.appendChild(k);
     var mod=i%7;
     if(mod in BLACK_AFTER && i<whites.length-1){
-      var bk=document.createElement('div'); bk.className='key black';
-      var bn=BLACK_AFTER[mod][0]; bk.dataset.note=bn;
+      var bk=document.createElement('div');
+      bk.className='key black';
+      var bn=BLACK_AFTER[mod][0];
+      bk.dataset.note=bn;
       bk.addEventListener('click', function(){ handleAnswer(bn); });
       piano.appendChild(bk);
     }
   });
 }
 
+// ── Note logic ────────────────────────────────────────────────────────────────
 function nextNote(){
   errors=0; answered=false;
   currentNote=notePool[Math.floor(Math.random()*notePool.length)];
@@ -295,17 +316,16 @@ function handleAnswer(noteName){
   var ok=noteName.toUpperCase()===correct.toUpperCase();
   var isNatural=noteName.indexOf('#')===-1;
   var pool=[].slice.call(document.querySelectorAll(isNatural?'.key.white':'.key.black'));
-  // find the key that was actually clicked — match by note name only for click target
   var hit=pool.find(function(k){ return k.dataset.note===noteName; });
   if(ok){
     answered=true; score++; streak++; if(streak>best) best=streak;
     updateHUD();
-    if(hit){ hit.classList.add('active-correct'); setTimeout(function(){ hit.classList.remove('active-correct'); }, 500); }
+    if(hit){ hit.classList.add('active-correct'); setTimeout(function(){ hit.classList.remove('active-correct'); },500); }
     setFeedback('Correct!','correct');
     setTimeout(nextNote, 850);
   } else {
     errors++; streak=0; updateHUD(); renderPips();
-    if(hit){ hit.classList.add('active-wrong'); setTimeout(function(){ hit.classList.remove('active-wrong'); }, 350); }
+    if(hit){ hit.classList.add('active-wrong'); setTimeout(function(){ hit.classList.remove('active-wrong'); },350); }
     if(errors>=MAX_ERRORS) revealAnswer();
     else setFeedback('Try again — '+(MAX_ERRORS-errors)+' attempt'+(MAX_ERRORS-errors===1?'':'s')+' left','wrong');
   }
@@ -316,9 +336,8 @@ function revealAnswer(){
   var correctOct=currentNote.oct;
   var isNat=correct.indexOf('#')===-1;
   var pool=[].slice.call(document.querySelectorAll(isNat?'.key.white':'.key.black'));
-  var targetFullName=correct+correctOct;
-  var hit=pool.find(function(k){ return k.dataset.fullname===targetFullName; })
-          ||pool.find(function(k){ return k.dataset.note===correct; });
+  var hit=pool.find(function(k){ return k.dataset.fullname===correct+correctOct; })
+        ||pool.find(function(k){ return k.dataset.note===correct; });
   if(hit) hit.classList.add('revealed');
   setFeedback('The answer is '+correct+' — click it to continue','reveal');
   if(hit) hit.addEventListener('click', function handler(){
@@ -334,7 +353,6 @@ function clearKeyHighlights(){
     k.classList.remove('active-correct','active-wrong','revealed');
   });
 }
-
 function renderPips(){
   var el=document.getElementById('error-pips'); el.innerHTML='';
   for(var i=0;i<MAX_ERRORS;i++){
@@ -343,23 +361,20 @@ function renderPips(){
     el.appendChild(p);
   }
 }
-
 function setFeedback(msg,cls){
   var el=document.getElementById('feedback');
   el.textContent=msg; el.className='feedback'+(cls?' '+cls:'');
 }
-
 function updateHUD(){
   document.getElementById('score-val').textContent=score;
   document.getElementById('streak-val').textContent=streak;
   document.getElementById('best-val').textContent=best;
 }
 
+// ── Staff rendering ───────────────────────────────────────────────────────────
 function noteYpx(staffStep, staffTop, lg){
-  // bottom line = staffStep 2, drawn at staffTop + 4*lg
-  // each diatonic step up = lg/2 pixels up
-  var bottomLineY = staffTop + 4*lg;
-  return bottomLineY - (staffStep - 2) * (lg/2);
+  // bottom line = staffStep 2, at staffTop + 4*lg
+  return (staffTop + 4*lg) - (staffStep - 2) * (lg/2);
 }
 
 function renderStaff(){
@@ -370,33 +385,36 @@ function renderStaff(){
   var ctx=canvas.getContext('2d'); ctx.scale(2,2);
   ctx.clearRect(0,0,W,H);
   var lg=16, staffTop=50;
-  var bottomLineY=staffTop+4*lg; // Y of bottom staff line = G2/E4
   var ink='#1a1a2e';
 
+  // Staff background
   ctx.fillStyle='rgba(83,74,183,0.05)';
-  ctx.beginPath(); ctx.roundRect(30,staffTop-16,W-50,4*lg+32,8); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(30,staffTop-14,W-50,4*lg+28,8); ctx.fill();
 
+  // 5 lines
   ctx.strokeStyle='rgba(83,74,183,0.25)'; ctx.lineWidth=1;
   for(var i=0;i<5;i++){
     var y=staffTop+i*lg;
     ctx.beginPath(); ctx.moveTo(40,y); ctx.lineTo(W-24,y); ctx.stroke();
   }
 
+  // Clef symbol
   ctx.fillStyle=ink;
   if(clef==='treble'){
     ctx.font='bold 62px serif'; ctx.fillText('𝄞',24,staffTop+4*lg+12);
   } else {
-    ctx.font='bold 44px serif'; ctx.fillText('𝄢',28,staffTop+2*lg+2);
-    ctx.beginPath(); ctx.arc(58,staffTop+lg-3,3.5,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(58,staffTop+2*lg-3,3.5,0,Math.PI*2); ctx.fill();
+    ctx.font='bold 44px serif'; ctx.fillText('𝄢',28,staffTop+2*lg+4);
+    ctx.beginPath(); ctx.arc(56,staffTop+lg-2,3,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(56,staffTop+2*lg-2,3,0,Math.PI*2); ctx.fill();
   }
 
+  // Key signature
   var acc=selectedKey.acc, isSharp=selectedKey.accType==='sharp';
   var accSteps=clef==='treble'?(isSharp?T_SHARP_STEPS:T_FLAT_STEPS):(isSharp?B_SHARP_STEPS:B_FLAT_STEPS);
   var sym=isSharp?'♯':'♭';
   var sigX=clef==='treble'?80:74;
   ctx.fillStyle=ink;
-  acc.forEach(function(_,idx){
+  acc.forEach(function(noteName, idx){
     var step=accSteps[idx];
     if(step>11) step-=7; if(step<0) step+=7;
     var ay=noteYpx(step,staffTop,lg);
@@ -404,39 +422,51 @@ function renderStaff(){
     ctx.fillText(sym,sigX,ay+5); sigX+=14;
   });
 
+  // Note
   var step=currentNote.staffStep;
   var ny=noteYpx(step,staffTop,lg);
   var nx=acc.length>0?Math.max(sigX+26,W/2+10):W/2+20;
 
+  // Ledger lines
   ctx.lineWidth=1.5; ctx.strokeStyle=ink;
   if(clef==='treble'){
-    if(step<=0){ ctx.beginPath(); ctx.moveTo(nx-14,noteYpx(0,staffTop,lg)); ctx.lineTo(nx+14,noteYpx(0,staffTop,lg)); ctx.stroke(); }
-    for(var s=10;s<=step;s+=2){ ctx.beginPath(); ctx.moveTo(nx-14,noteYpx(s,staffTop,lg)); ctx.lineTo(nx+14,noteYpx(s,staffTop,lg)); ctx.stroke(); }
+    if(step<=0){
+      ctx.beginPath(); ctx.moveTo(nx-14,noteYpx(0,staffTop,lg)); ctx.lineTo(nx+14,noteYpx(0,staffTop,lg)); ctx.stroke();
+    }
+    for(var s=10;s<=step;s+=2){
+      ctx.beginPath(); ctx.moveTo(nx-14,noteYpx(s,staffTop,lg)); ctx.lineTo(nx+14,noteYpx(s,staffTop,lg)); ctx.stroke();
+    }
   } else {
-    if(step<=1){ ctx.beginPath(); ctx.moveTo(nx-14,noteYpx(0,staffTop,lg)); ctx.lineTo(nx+14,noteYpx(0,staffTop,lg)); ctx.stroke(); }
-    for(var s=10;s<=step;s+=2){ ctx.beginPath(); ctx.moveTo(nx-14,noteYpx(s,staffTop,lg)); ctx.lineTo(nx+14,noteYpx(s,staffTop,lg)); ctx.stroke(); }
+    if(step<=1){
+      ctx.beginPath(); ctx.moveTo(nx-14,noteYpx(0,staffTop,lg)); ctx.lineTo(nx+14,noteYpx(0,staffTop,lg)); ctx.stroke();
+    }
+    for(var s=10;s<=step;s+=2){
+      ctx.beginPath(); ctx.moveTo(nx-14,noteYpx(s,staffTop,lg)); ctx.lineTo(nx+14,noteYpx(s,staffTop,lg)); ctx.stroke();
+    }
   }
   ctx.lineWidth=1;
 
+  // Accidental beside note
   if(acc.indexOf(currentNote.name)!==-1){
     ctx.font=isSharp?'bold 13px serif':'bold 17px serif';
     ctx.fillStyle=ink; ctx.fillText(sym,nx-22,ny+5);
   }
 
+  // Note head glow + fill
   ctx.beginPath(); ctx.ellipse(nx,ny,11,7.5,-0.15,0,Math.PI*2);
   ctx.fillStyle='rgba(83,74,183,0.15)'; ctx.fill();
   ctx.beginPath(); ctx.ellipse(nx,ny,10,7,-0.15,0,Math.PI*2);
   ctx.fillStyle='#534AB7'; ctx.fill();
 
-  // For bass clef: middle line = D3 = staffStep 6, stem up if below middle (step < 6)
-  // For treble clef: middle line = B4 = staffStep 6, same rule
-  var stemUp = step < 6;
+  // Stem
+  var stemUp=step<6;
   ctx.beginPath();
   if(stemUp){ ctx.moveTo(nx+9,ny); ctx.lineTo(nx+9,ny-52); }
   else { ctx.moveTo(nx-9,ny); ctx.lineTo(nx-9,ny+52); }
   ctx.strokeStyle='#534AB7'; ctx.lineWidth=1.8; ctx.stroke();
 }
 
+// ── Keyboard shortcut ─────────────────────────────────────────────────────────
 document.addEventListener('keydown', function(e){
   if(document.getElementById('screen-game').classList.contains('active')){
     var k=e.key.toUpperCase();
@@ -446,6 +476,44 @@ document.addEventListener('keydown', function(e){
 
 // ── Pitch detection ───────────────────────────────────────────────────────────
 var NOTE_FREQS={C:261.63,D:293.66,E:329.63,F:349.23,G:392.00,A:440.00,B:493.88};
+
+function getSensitivityParams(){
+  var v=parseInt(document.getElementById('sens-slider').value)||3;
+  var thresholds=[0.08,0.12,0.18,0.24,0.32];
+  var confirms=[3,2,2,1,1];
+  return {threshold:thresholds[v-1], confirm:confirms[v-1]};
+}
+
+function yinPitch(buf, sr, threshold){
+  var bufLen=buf.length;
+  var halfLen=Math.floor(bufLen/2);
+  var yinBuf=new Float32Array(halfLen);
+  yinBuf[0]=1;
+  var runningSum=0;
+  for(var tau=1;tau<halfLen;tau++){
+    var diff=0;
+    for(var i=0;i<halfLen;i++){
+      var d=buf[i]-buf[i+tau];
+      diff+=d*d;
+    }
+    runningSum+=diff;
+    yinBuf[tau]=diff*tau/runningSum;
+  }
+  var tauEst=-1;
+  for(var tau=2;tau<halfLen;tau++){
+    if(yinBuf[tau]<threshold){
+      while(tau+1<halfLen && yinBuf[tau+1]<yinBuf[tau]) tau++;
+      tauEst=tau; break;
+    }
+  }
+  if(tauEst===-1) return -1;
+  var better=tauEst;
+  if(tauEst>0 && tauEst<halfLen-1){
+    var s0=yinBuf[tauEst-1], s1=yinBuf[tauEst], s2=yinBuf[tauEst+1];
+    better=tauEst+(s2-s0)/(2*(2*s1-s2-s0));
+  }
+  return sr/better;
+}
 
 function freqToNote(f){
   var best=null, bestDist=Infinity;
@@ -460,26 +528,14 @@ function freqToNote(f){
   return best;
 }
 
-function autoCorrelate(buf,sr){
-  var rms=0;
-  for(var i=0;i<buf.length;i++) rms+=buf[i]*buf[i];
-  rms=Math.sqrt(rms/buf.length);
-  if(rms<0.003) return -1;
-  var r1=0, r2=buf.length-1, thres=0.2;
-  for(var i=0;i<buf.length/2;i++){ if(Math.abs(buf[i])<thres){ r1=i; break; } }
-  for(var i=buf.length-1;i>buf.length/2;i--){ if(Math.abs(buf[i])<thres){ r2=i; break; } }
-  var sub=buf.slice(r1,r2);
-  var cc=new Float32Array(sub.length*2);
-  for(var i=0;i<sub.length;i++) for(var j=0;j<sub.length;j++) cc[i+j]+=sub[j]*sub[i];
-  var d=0; while(cc[d]>cc[d+1]) d++;
-  var maxVal=-1, maxPos=-1;
-  for(var i=d;i<cc.length/2;i++){ if(cc[i]>maxVal){ maxVal=cc[i]; maxPos=i; } }
-  if(maxPos<1) return -1;
-  var x1=cc[maxPos-1], x2=cc[maxPos], x3=cc[maxPos+1];
-  return sr/(maxPos+(x3-x1)/(2*(2*x2-x1-x3)));
+function debugLog(msg){
+  var log=document.getElementById('debug-log');
+  if(!log) return;
+  var line=document.createElement('div');
+  line.textContent=msg; log.appendChild(line);
+  while(log.children.length>20) log.removeChild(log.firstChild);
+  log.scrollTop=log.scrollHeight;
 }
-
-var lastDetected=null, detCount=0;
 
 function startMic(){
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
@@ -497,27 +553,34 @@ function startMic(){
     micSource=audioCtx.createMediaStreamSource(stream);
     micSource.connect(micGain);
     micGain.connect(analyser);
-    audioCtx.resume().then(function(){
-      document.getElementById('mic-text').textContent='Mic active — play a note';
-    });
+    audioCtx.resume();
 
     document.getElementById('mic-status').className='mic-status active';
     document.getElementById('mic-text').textContent='Mic active — play a note';
     document.getElementById('debug-panel').style.display='block';
-    document.getElementById('debug-log').innerHTML='<div>Mic connected, waiting for sound...</div>';
-
-    // Show waveform
-    var wrap=document.getElementById('waveform-wrap');
-    wrap.style.display='block';
-    var wCanvas=document.getElementById('waveform');
-    var wCtx=wCanvas.getContext('2d');
+    debugLog('Mic connected — waiting for sound...');
 
     var buf=new Float32Array(analyser.fftSize);
+    var params=getSensitivityParams();
 
+    // Diagnostic timer
+    diagTimer=setInterval(function(){
+      analyser.getFloatTimeDomainData(buf);
+      var rms=0;
+      for(var i=0;i<buf.length;i++) rms+=buf[i]*buf[i];
+      rms=Math.sqrt(rms/buf.length);
+      var f=yinPitch(buf, audioCtx.sampleRate, params.threshold);
+      debugLog('RMS:'+rms.toFixed(5)+' freq:'+(f>0?f.toFixed(1)+'Hz':'—')+' note:'+(f>0?freqToNote(f):'—'));
+    },500);
+
+    // Waveform
+    var wWrap=document.getElementById('waveform-wrap');
+    var wCanvas=document.getElementById('waveform');
+    var wCtx=wCanvas.getContext('2d');
+    wWrap.style.display='block';
     var W=wCanvas.offsetWidth||560, H=40;
     wCanvas.width=W*2; wCanvas.height=H*2;
     wCanvas.style.width=W+'px'; wCanvas.style.height=H+'px';
-
     function drawWave(){
       animFrame=requestAnimationFrame(drawWave);
       wCtx.save();
@@ -526,8 +589,7 @@ function startMic(){
       analyser.getFloatTimeDomainData(buf);
       wCtx.beginPath();
       wCtx.strokeStyle='#534AB7'; wCtx.lineWidth=1.5;
-      var sliceW=W/buf.length;
-      var x=0;
+      var sliceW=W/buf.length, x=0;
       for(var i=0;i<buf.length;i++){
         var v=(1-((buf[i]+1)/2))*H;
         if(i===0) wCtx.moveTo(x,v); else wCtx.lineTo(x,v);
@@ -538,36 +600,16 @@ function startMic(){
     }
     drawWave();
 
-    // Diagnostic: log raw RMS every second so we can see if audio is coming in
-    var diagTimer=setInterval(function(){
-      analyser.getFloatTimeDomainData(buf);
-      var rms=0;
-      for(var i=0;i<buf.length;i++) rms+=buf[i]*buf[i];
-      rms=Math.sqrt(rms/buf.length);
-      console.log('AudioContext state:',audioCtx.state,' RMS:',rms.toFixed(6),' analyser fftSize:',analyser.fftSize);
-    },1000);
-
-    var params=getSensitivityParams();
-    var diagTimer=setInterval(function(){
-      analyser.getFloatTimeDomainData(buf);
-      var rms=0;
-      for(var i=0;i<buf.length;i++) rms+=buf[i]*buf[i];
-      rms=Math.sqrt(rms/buf.length);
-      var f=yinPitch(buf,audioCtx.sampleRate);
-      debugLog('RMS:'+rms.toFixed(5)+' freq:'+(f>0?f.toFixed(1)+'Hz':'—')+' note:'+(f>0?freqToNote(f):'—'));
-    },500);
-    micStream._diagTimer=diagTimer;
-
+    // Pitch timer
     pitchTimer=setInterval(function(){
       analyser.getFloatTimeDomainData(buf);
-      var f=yinPitch(buf,audioCtx.sampleRate);
+      var f=yinPitch(buf, audioCtx.sampleRate, params.threshold);
       if(f>40&&f<1400){
         var n=freqToNote(f);
         if(n===lastDetected){ detCount++; if(detCount===params.confirm) handleAnswer(n); }
         else { lastDetected=n; detCount=0; }
       }
     },80);
-    micStream._diagTimer=diagTimer;
 
   }).catch(function(){
     document.getElementById('mic-text').textContent='Mic access denied — use click or keyboard';
@@ -576,13 +618,13 @@ function startMic(){
 
 function stopMic(){
   if(animFrame){ cancelAnimationFrame(animFrame); animFrame=null; }
+  if(diagTimer){ clearInterval(diagTimer); diagTimer=null; }
   if(pitchTimer){ clearInterval(pitchTimer); pitchTimer=null; }
-
-  if(micStream&&micStream._diagTimer){ clearInterval(micStream._diagTimer); }
   if(micSource){ micSource.disconnect(); micSource=null; }
   if(micGain){ micGain.disconnect(); micGain=null; }
   if(micStream){ micStream.getTracks().forEach(function(t){ t.stop(); }); micStream=null; }
   if(audioCtx){ audioCtx.close(); audioCtx=null; }
+  lastDetected=null; detCount=0;
 }
 
 window.addEventListener('resize', function(){
